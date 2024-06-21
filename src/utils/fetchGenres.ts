@@ -1,4 +1,4 @@
-const API_URL = "https://api.themoviedb.org/3/movie/popular?language=pt-BR";
+const API_URL = "https://api.themoviedb.org/3/genre/movie/list?language=pt-BR";
 const API_OPTIONS = {
   method: "GET",
   headers: {
@@ -8,20 +8,16 @@ const API_OPTIONS = {
   },
 };
 
-export const fetchMovies = async (page = 1, genres: number[] = []) => {
-  const genreQuery =
-    genres.length > 0 ? `&with_genres=${genres.join(",")}` : "";
-  const url = `${API_URL}?language=pt-BR&page=${page}${genreQuery}`;
-
+export const fetchGenres = async () => {
   try {
-    const response = await fetch(url, API_OPTIONS);
+    const response = await fetch(API_URL, API_OPTIONS);
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    return data.results;
+    return data;
   } catch (error) {
-    console.error("Error fetching movies:", error);
+    console.error("Error fetching genres:", error);
     throw error;
   }
 };
