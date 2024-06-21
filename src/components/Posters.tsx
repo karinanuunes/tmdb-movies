@@ -5,19 +5,40 @@ import { useState, useEffect } from "react";
 import nextIcon from "../assets/next-icon.png";
 import Link from "next/link";
 
-const Posters = () => {
+interface Movie {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+  genre_ids: number[];
+}
+
+interface PostersProps {
+  selectedGenres: number[];
+}
+
+const Posters = ({ selectedGenres }: PostersProps) => {
   const [movies, setMovies] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const fetchMovies = async (page: number, genreId = null) => {
+  const fetchMovies = async (page: number, genres: string[] = []) => {
+    setLoading(true);
     let url = `/api/movies?page=${page}`;
-    if (genreId) url += `&genre=${genreId}`;
+    if (genres.length > 0) {
+      const genresParam = genres.join("&");
+      url += `&genres=${genresParam}`;
+    }
 
     try {
       const response = await fetch(url);
       const data = await response.json();
-      setMovies(data.results);
+      setMovies(data);
+
+      const filteredMovies = data.filter((movie: Movie) =>
+        movie.genre_ids.some((genreId) => selectedGenres.includes(genreId))
+      );
+      if (filteredMovies.length > 0) setMovies(filteredMovies);
     } catch (error) {
       console.error("Error fetching movies:", error);
     } finally {
@@ -26,16 +47,13 @@ const Posters = () => {
   };
 
   useEffect(() => {
-    fetchMovies(currentPage);
-  }, [currentPage]);
+    const stringGenres = selectedGenres.map(String);
+    fetchMovies(currentPage, stringGenres);
+  }, [currentPage, selectedGenres]);
 
   const handleNextPageClick = () => {
     setCurrentPage((prevPage) => prevPage + 1);
   };
-
-  // const handlePrevPageClick = () => {
-  //   if (currentPage > 1) setCurrentPage((prevPage) => prevPage - 1);
-  // };
 
   const handlePageClick = (page: number) => {
     setCurrentPage(page);
@@ -74,7 +92,6 @@ const Posters = () => {
             <div
               className="w-44 h-80 flex flex-col gap-2 mb-12 hover:transform hover:scale-105 transition-transform cursor-pointer"
               key={movie.id}
-              // onClick={() => handleClick(movie.id)}
             >
               <Image
                 src={`${IMG_URL}${movie.poster_path}`}
@@ -94,22 +111,25 @@ const Posters = () => {
         ))}
       </div>
       <div className="flex justify-center mb-8 gap-10 text-[#5C16C5] font-bold">
-        {/* {currentPage > 1 && (
-          <button onClick={handlePrevPageClick}>Página anterior</button>
-        )} */}
-        {[...Array(5)].map((_, index) => (
-          <button
-            key={index}
-            onClick={() => handlePageClick(index + 1)}
-            disabled={currentPage === index + 1}
-          >
-            {index + 1}
-          </button>
-        ))}
-        <button onClick={handleNextPageClick}>
-          <Image src={nextIcon} alt="Ícone de seta para direita" />
-        </button>
-        <button onClick={() => handlePageClick(500)}>Última</button>
+        {movies.length > 8 ? (
+          <>
+            {[...Array(5)].map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handlePageClick(index + 1)}
+                disabled={currentPage === index + 1}
+              >
+                {index + 1}
+              </button>
+            ))}
+            <button onClick={handleNextPageClick}>
+              <Image src={nextIcon} alt="Ícone de seta para direita" />
+            </button>
+            <button onClick={() => handlePageClick(500)}>Última</button>
+          </>
+        ) : (
+          ""
+        )}
       </div>
     </>
   );
